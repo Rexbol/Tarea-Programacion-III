@@ -2,9 +2,14 @@ import tkinter as tk
 from tkinter import ttk
 import tkinter.messagebox as tk_messagebox
 
+from db_conection import start_connection, Estadia
+
 class RegistrosHotel(tk.Tk):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def _init_(self, *args, **kwargs):
+        super()._init_(*args, **kwargs)
+
+        #! Establecer la conexión a la base de datos:
+        self.session = start_connection() 
 
         self.title("Sistema de Hotel")
 
@@ -15,9 +20,9 @@ class RegistrosHotel(tk.Tk):
         self.frame_derecho = tk.Frame(self)
         self.frame_derecho.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
 
-        #?=====================================================================================================================================================================
+#?=====================================================================================================================================================================
         #? Frame Izquierdo
-        #?=====================================================================================================================================================================
+#?=====================================================================================================================================================================
         #! Etiquetas:
         tk.Label(self.frame_izquierdo, text="Nro. de Habitacion:").grid(row=0, column=0, padx=10, pady=10)
         tk.Label(self.frame_izquierdo, text="Dias de Estadia:").grid(row=2, column=0, padx=10, pady=10)
@@ -61,9 +66,9 @@ class RegistrosHotel(tk.Tk):
 
         self.cargar_referencias()
 
-        #?=====================================================================================================================================================================
+#?=====================================================================================================================================================================
         #? Tabla del Frame Derecho
-        #?=====================================================================================================================================================================
+#?=====================================================================================================================================================================
         #! Crear la tabla y definir las columnas en el frame derecho
         self.lista_estadias = ttk.Treeview(
             self.frame_derecho, columns=("numero", "tipo", "costo", "dias", "sub_total", "descuento", "total"), show="headings"
@@ -77,10 +82,10 @@ class RegistrosHotel(tk.Tk):
             self.lista_estadias.heading(col, text=header)
 
         #! Calcular el ancho total disponible
-        ancho_disponible = self.winfo_screenwidth() - self.frame_derecho.winfo_rootx() # 30 es una compensación arbitraria
+        #* ancho_disponible = self.winfo_screenwidth() - self.frame_derecho.winfo_rootx()
 
         #! Distribuir el ancho entre las columnas de manera proporcional
-        ancho_columna = (ancho_disponible//2// len(columnas))
+        ancho_columna = 129#*(ancho_disponible//3// len(columnas))
         for col in columnas:
             self.lista_estadias.column(col, width=ancho_columna, minwidth=ancho_columna, anchor=tk.CENTER)
 
@@ -89,6 +94,8 @@ class RegistrosHotel(tk.Tk):
             row=0, column=0, sticky="nsew"
         )
 
+        self.cargar_Estadias_En_curso()
+
     def cargar_referencias(self):
         tipos = ["Simple", "Doble", "Triple", "Cuadruple"]
         costos = [50000, 80000, 120000, 150000]
@@ -96,12 +103,43 @@ class RegistrosHotel(tk.Tk):
         for tipo, costo in zip(tipos, costos):
             self.tabla_de_referencias.insert("", "end", values=(tipo, costo,))
 
+    def finalizar_estadia(self, id_estadia):
+        ciudad_editar = (
+            self.session.query(Estadia).filter_by(id_estadia = id_estadia).first()
+        )
+
+        ciudad_editar.estado = "finalizado"
+        self.session.commit()
+
+        self.cargar_Estadias_En_curso() #! Cambiar a una modificacion de la tabla
+
+    def vuscar_estadia_repetida(self, nur_habitacion):
+        abitacion_repetida = self.session.query(Estadia).filter(Estadia.estado == "En_curso", Estadia.numero == nur_habitacion).first()
+
+        if abitacion_repetida:
+            self.finalizar_estadia(abitacion_repetida.id_estadia)
+        else: print("No existe estadias en curso para esta abitacion")
+
+    def cargar_Estadias_En_curso(self):
+        estadias_en_curso = self.session.query(Estadia).filter(Estadia.estado == "En_curso").all()
+        self.lista_estadias.delete(*self.lista_estadias.get_children())
+        
+        if not estadias_en_curso: 
+            print("Sin Datos")
+            return
+
+        for estadia in estadias_en_curso:
+            self.lista_estadias.insert("", "end", values=(estadia.numero, estadia.tipo, estadia.costo, estadia.dias_estadia, estadia.forma_de_pago))
+
     def cargar_estadia(self):
         #! Recuperacion de datos:
         nur_habitacion = self.nro_habitacion.get()
         seleccion = self.tabla_de_referencias.focus()
         dias_estadia = self.dias_estadia.get()
         forma_de_pago = self.forma_de_pago.get()
+
+        #! Finalizar estadia de abitacion seleccionada si esta en curso:
+        self.vuscar_estadia_repetida(nur_habitacion)
 
         #! Validacion de datos: 
         if not nur_habitacion:
@@ -123,12 +161,21 @@ class RegistrosHotel(tk.Tk):
         #! Combercion archivo seleccionado en una tupla:
         valores_fila = self.tabla_de_referencias.item(seleccion, "values")
 
-        print(nur_habitacion)
-        print(valores_fila[0], valores_fila[1])
-        print(dias_estadia)
-        print(forma_de_pago)
+        #! Instanciacion de Objeto estadia:
+        nueva_estadia = Estadia(
+            numero= nur_habitacion,
+            tipo= valores_fila[0],
+            costo= valores_fila[1],
+            dias_estadia= dias_estadia,
+            forma_de_pago= forma_de_pago,
+            estado= "En_curso")
 
-if __name__ == "__main__":
+        self.session.add(nueva_estadia)
+        self.session.commit()
+
+        self.lista_estadias.insert("", "end", values=(nur_habitacion, valores_fila[0], valores_fila[1], dias_estadia, forma_de_pago))
+
+if _name_ == "_main_":
     app = RegistrosHotel()
     app.mainloop()
 
