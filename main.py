@@ -6,7 +6,7 @@ from db_conection import start_connection, Estadia
 
 class RegistrosHotel(tk.Tk):
     def _init_(self, *args, **kwargs):
-        super()._init_(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         #! Establecer la conexión a la base de datos:
         self.session = start_connection() 
@@ -175,7 +175,7 @@ class RegistrosHotel(tk.Tk):
 
         self.lista_estadias.insert("", "end", values=(nur_habitacion, valores_fila[0], valores_fila[1], dias_estadia, forma_de_pago))
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     app = RegistrosHotel()
     app.mainloop()
 
