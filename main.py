@@ -42,8 +42,6 @@ class App(ctk.CTk):
         subventana.grab_set()
         self.wait_window(subventana)
 
-
-
     def primer_formulario(self):
         ventana_referencia = cargar_referencias(self) 
         self.config_ventana(ventana_referencia)
