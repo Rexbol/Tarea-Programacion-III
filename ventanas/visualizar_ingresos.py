@@ -1,13 +1,13 @@
 import tkinter as tk
 from tkinter import ttk
 import customtkinter as ctk
-#from db.db_conection import start_connection, Estadia, Habitacion
+from db.db_conection import start_connection, Habitacion
 class visualizar_ingresos(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
         
         #! Establecer la conexión a la base de datos:
-        #? self.session = start_connection() 
+        self.session = start_connection() 
         
         self.title("Visualizar los Ingresos")
 
@@ -20,6 +20,8 @@ class visualizar_ingresos(tk.Toplevel):
         
         self.crear_frame_izquierdo()
         self.crear_frame_derecho()
+        
+        self.cargar_info_Habitaciones()
         
     def crear_frame_izquierdo(self):
         #! Crear lista desplegable y asignar la opcion inicial
@@ -34,12 +36,12 @@ class visualizar_ingresos(tk.Toplevel):
 
         #! Crear la tabla y definir las columnas en el frame derecho:
         self.lista_estadias = ttk.Treeview(
-            self.frame_derecho, columns=("id", "tipo", "total"), show="headings"
+            self.frame_derecho, columns=("id", "tipo", "dias_total", "recaudacion_total"), show="headings"
         )
 
         #! Configurar las cabeceras de las columnas:
-        columnas = ["id", "tipo", "total"]
-        cabeceras = ["Id", "Tipo", "Total"]
+        columnas = ["id", "tipo", "dias_total", "recaudacion_total"]
+        cabeceras = ["Id", "Tipo", "Dias Estadia Totales", " Recaudacion Total"]
 
         for col, header in zip(columnas, cabeceras):
             self.lista_estadias.heading(col, text=header)
@@ -57,3 +59,21 @@ class visualizar_ingresos(tk.Toplevel):
 
         #! Layout de la tabla:
         self.lista_estadias.grid(row=0, column=0, sticky="nsew")    
+        
+    def cargar_info_Habitaciones(self):
+        tipo_habitacion = self.lista_dias.get()
+        info_habitacion = self.session.query(Habitacion).filter(Habitacion.tipo == tipo_habitacion).all()
+        self.lista_estadias.delete(*self.lista_estadias.get_children())
+
+        if not info_habitacion:
+            print("Sin Datos")
+            return
+        
+        for Habitacion in info_habitacion:
+            self.lista_estadias.insert("", "end", values=(
+                Habitacion.id_habitacion,
+                Habitacion.tipo,
+                Habitacion.dias_total,
+                Habitacion.recaudacion_total 
+                )
+            )
