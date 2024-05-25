@@ -3,10 +3,9 @@ from tkinter import ttk
 import tkinter.messagebox as tk_messagebox
 from db.db_conection import start_connection, Habitacion
 
-
 class cargar_referencias(tk.Toplevel):
-    def _init_(self, parent):
-        super()._init_(parent)
+    def __init__(self, parent):
+        super().__init__(parent)
         
         self.title("Cargar Tipo y Costo de Habitaciones")
 
@@ -34,10 +33,15 @@ class cargar_referencias(tk.Toplevel):
         self.borrar_button.grid(row=3, column=1, padx=10, pady=10)
 
         # Tabla
-        self.tabla_referencias = ttk.Treeview(self, columns=("Tipo", "Costo"))
+        self.tabla_referencias = ttk.Treeview(self, columns=("Tipo", "Costo"), show="headings")
         self.tabla_referencias.heading("Tipo", text="Tipo")
         self.tabla_referencias.heading("Costo", text="Costo")
         self.tabla_referencias.grid(row=4, column=0, columnspan=3, padx=20, pady=10)
+
+        # Scrollbar para la tabla
+        self.scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.tabla_referencias.yview)
+        self.tabla_referencias.configure(yscrollcommand=self.scrollbar.set)
+        self.scrollbar.grid(row=4, column=3, sticky='ns')
 
         self.cargar_referencias()
 
@@ -58,7 +62,7 @@ class cargar_referencias(tk.Toplevel):
         if tipo and costo:
             try:
                 costo = int(costo)
-                nueva_referencia = Habitacion(tipo=tipo, costo=costo, dias_total=0, recaudacion_total=0)
+                nueva_referencia = Habitacion(tipo = tipo, costo = costo)
                 self.session.add(nueva_referencia)
                 self.session.commit()
                 self.cargar_referencias()
@@ -71,16 +75,16 @@ class cargar_referencias(tk.Toplevel):
     def borrar_referencia(self):
         seleccion = self.tabla_referencias.focus()
         if seleccion:
-            confirmacion = tk_messagebox.askyesno("Confirmar", "¿Estás seguro de que deseas borrar esta referencia?")
-            if confirmacion:
-                tipo_referencia = self.tabla_referencias.item(seleccion)['values'][0]
-                referencia = self.session.query(Habitacion).filter_by(tipo=tipo_referencia).first()
-                if referencia:
-                    self.session.delete(referencia)
-                    self.session.commit()
-                    self.cargar_referencias()
-                    tk_messagebox.showinfo("Éxito", "Referencia borrada correctamente.")
-                else:
-                    tk_messagebox.showerror("Error", "Referencia no encontrada.")
+            valores = self.tabla_referencias.item(seleccion, "values")
+            tipo = valores[0]
+
+            # Eliminar de la base de datos
+            referencia_a_borrar = self.session.query(Habitacion).filter_by(tipo=tipo).first()
+            self.session.delete(referencia_a_borrar)
+            self.session.commit()
+
+            # Eliminar de la tabla
+            self.tabla_referencias.delete(seleccion)
+            tk_messagebox.showinfo("Éxito", "Referencia borrada correctamente.")
         else:
             tk_messagebox.showerror("Error", "Por favor seleccione una referencia para borrar.")

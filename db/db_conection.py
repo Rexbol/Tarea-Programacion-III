@@ -22,8 +22,6 @@ class Habitacion(Base):
     id_habitacion = Column(Integer, primary_key=True)
     tipo = Column(String(20))
     costo = Column(Integer)
-    dias_total = Column(Integer)
-    recaudacion_total = Column(Integer)
 
 def start_connection():
     engine = create_engine(
