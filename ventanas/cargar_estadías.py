@@ -1,7 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 import tkinter.messagebox as tk_messagebox
-from db.db_conection import start_connection, Estadia
+from ventanas.modificar_dias_estadia import modificar_dias
+from db.db_conection import start_connection, Estadia, Habitacion
 
 class cargar_estadías(tk.Toplevel):
     def __init__(self, parent):
@@ -20,9 +21,9 @@ class cargar_estadías(tk.Toplevel):
         self.frame_derecho.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
 
         #! Configurar el grid para que los frames ocupen el espacio disponible
-        #? self.grid_columnconfigure(0, weight=1)
-        #? self.grid_columnconfigure(1, weight=1)
-        #? self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=1)
+        self.grid_rowconfigure(0, weight=1)
 
         self.crear_frame_izquierdo()
         self.crear_frame_derecho()
@@ -127,7 +128,12 @@ class cargar_estadías(tk.Toplevel):
 
     def modificar_dias_estadia(self):
         estadia_a_modificar = self.recuperar_estadia_seleccionada()
-        print(estadia_a_modificar[0])
+        id_estadia = estadia_a_modificar[0]
+
+        ventana_referencia = modificar_dias(self, id_estadia)
+        ventana_referencia.transient(self)
+        ventana_referencia.grab_set()
+        self.wait_window(ventana_referencia)
 
     def cargar_referencias(self):
         tipos = ["Simple", "Doble", "Triple", "Cuadruple"]
@@ -135,6 +141,16 @@ class cargar_estadías(tk.Toplevel):
 
         for tipo, costo in zip(tipos, costos):
             self.tabla_de_referencias.insert("", "end", values=(tipo, costo))
+    
+        # #! Limpiar la tabla de referencias
+        # self.tabla_de_referencias.delete(*self.tabla_de_referencias.get_children())
+
+        # #! Obtener referencias de la base de datos
+        # referencias = self.session.query(Habitacion).all()
+
+        # #! Insertar referencias en la tabla
+        # for referencia in referencias:
+        #     self.tabla_de_referencias.insert("", "end", values=(referencia.tipo, referencia.costo))
 
     def buscar_estadia_repetida(self, numero_habitacion):
         habitacion_repetida = self.session.query(Estadia).filter(Estadia.state == "En_curso", Estadia.numero_habitacion == numero_habitacion).first()
@@ -161,20 +177,31 @@ class cargar_estadías(tk.Toplevel):
                 estadia.sub_total,
                 estadia.descuento,
                 estadia.total 
-                )
-            )
-
-    def descuento(self, dias_estadia, forma_de_pago):
-        descuento = 0
-        if forma_de_pago == "contado":
-            descuento = 10
-        elif forma_de_pago == "credito" and dias_estadia > 5:
-            descuento = 5
-        if dias_estadia > 10:
-            descuento += 2
-        return descuento
+            ))
 
     def cargar_estadia(self):
+        try:
+            numero_habitacion = self.nro_habitacion.get()
+            dias_estadia = int(self.dias_estadia.get())
+            referencia_seleccionada = self.tabla_de_referencias.item(self.tabla_de_referencias.selection())["values"]
+            tipo_habitacion = referencia_seleccionada[0]
+            costo_habitacion = referencia_seleccionada[1]
+
+            sub_total = costo_habitacion * dias_estadia
+            descuento = 10 if self.forma_de_pago.get() == "contado" else 0
+            total = sub_total - (sub_total * descuento / 100)
+
+            self.buscar_estadia_repetida(numero_habitacion)
+
+            nueva_estadia = Estadia(numero_habitacion=numero_habitacion, tipo_habitacion=tipo_habitacion, costo=costo_habitacion, dias_estadia=dias_estadia, sub_total=sub_total, descuento=descuento, total=total, state="En_curso")
+            self.session.add(nueva_estadia)
+            self.session.commit()
+
+            self.cargar_Estadias_En_curso()
+        except Exception as e:
+            tk_messagebox.showerror("Error", f"Error al cargar la estadia: {str(e)}")
+
+
         #! Recuperacion de datos del formulario:
         numero_habitacion = self.nro_habitacion.get()
         seleccion = self.tabla_de_referencias.focus()
