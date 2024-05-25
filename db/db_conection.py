@@ -36,9 +36,12 @@ def start_connection():
 #! Octener la suma de ingresos totales por tipo de abitacion:
 def get_total_finalizado(tipo_habitacion):
     session = start_connection()
-    total = session.query(func.sum(Estadia.total)).filter(
+    total, dias_estadia = session.query(
+        func.sum(Estadia.total),
+        func.sum(Estadia.dias_estadia)
+    ).filter(
         Estadia.state == 'finalizado',
         Estadia.tipo_habitacion == tipo_habitacion
-    ).scalar()
+    ).first()
     session.close()
-    return total if total else 0
+    return (dias_estadia if dias_estadia else 0, total if total else 0)

@@ -4,8 +4,6 @@ import customtkinter as ctk
 from ventanas.cargar_estadías import cargar_estadías
 from ventanas.cargar_referencias import cargar_referencias
 from ventanas.visualizar_ingresos import visualizar_ingresos
-
-
 class App(ctk.CTk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -35,7 +33,6 @@ class App(ctk.CTk):
         self.mostrar_tercer_formulario.grid(
             row=2, column=0, columnspan=3, padx=10, pady=10
         )
-
 
     def config_ventana(self, subventana):
         subventana.transient(self)
