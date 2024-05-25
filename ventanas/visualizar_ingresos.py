@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 import customtkinter as ctk
-from db.db_conection import start_connection, Habitacion
+from db.db_conection import get_total_finalizado, start_connection, Estadia
 class visualizar_ingresos(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
@@ -10,7 +10,7 @@ class visualizar_ingresos(tk.Toplevel):
         self.session = start_connection() 
         
         self.title("Visualizar los Ingresos")
-
+        
         #! Crear un frame para contener la lista y la tabla
         self.frame_izquierdo = tk.Frame(self, bd=2)
         self.frame_izquierdo.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
@@ -36,12 +36,12 @@ class visualizar_ingresos(tk.Toplevel):
 
         #! Crear la tabla y definir las columnas en el frame derecho:
         self.lista_estadias = ttk.Treeview(
-            self.frame_derecho, columns=("id", "tipo", "dias_total", "recaudacion_total"), show="headings"
+            self.frame_derecho, columns=("id", "tipo", "recaudacion_total"), show="headings"
         )
 
         #! Configurar las cabeceras de las columnas:
-        columnas = ["id", "tipo", "dias_total", "recaudacion_total"]
-        cabeceras = ["Id", "Tipo", "Dias Estadia Totales", " Recaudacion Total"]
+        columnas = ["id", "tipo", "recaudacion_total"]
+        cabeceras = ["Id", "Tipo", " Recaudacion Total"]
 
         for col, header in zip(columnas, cabeceras):
             self.lista_estadias.heading(col, text=header)
@@ -58,23 +58,23 @@ class visualizar_ingresos(tk.Toplevel):
         scrollbar_vertical.grid(row=0, column=1, sticky="ns")
 
         #! Layout de la tabla:
-        self.lista_estadias.grid(row=0, column=0, sticky="nsew")    
-        
+        self.lista_estadias.grid(row=0, column=0, sticky="nsew")
+                
     def cargar_info_Habitaciones(self):
         tipo_habitacion = self.lista_dias.get()
-        info_habitacion = self.session.query(Habitacion).filter(Habitacion.tipo == tipo_habitacion).all()
+        info_habitacion = self.session.query(Estadia).filter(Estadia.tipo == tipo_habitacion).all()
         self.lista_estadias.delete(*self.lista_estadias.get_children())
-
+        total = get_total_finalizado(tipo_habitacion)
+        
         if not info_habitacion:
             print("Sin Datos")
             return
         
-        for Habitacion in info_habitacion:
+        for Estadia in info_habitacion:
             self.lista_estadias.insert("", "end", values=(
-                Habitacion.id_habitacion,
-                Habitacion.tipo,
-                Habitacion.dias_total,
-                Habitacion.recaudacion_total 
+                Estadia.numero_habitacion,
+                Estadia.tipo_habitacion,
+                total 
                 )
             )
 
