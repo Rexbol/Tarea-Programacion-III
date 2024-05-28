@@ -35,10 +35,10 @@ class App(ctk.CTk):
         self.username_entry.grid(row=0, column=1, padx=10, pady=10)
         self.password_entry.grid(row=1, column=1, padx=10, pady=10)
 
-        self.login_button = tk.Button(self, text="Login", command=login)
+        self.login_button = tk.Button(self, text="Login", command=self.login)
         self.login_button.grid(row=2, column=0, columnspan=2, pady=10)
 
-        self.register_button = tk.Button(self, text="Registrar", command=register)
+        self.register_button = tk.Button(self, text="Registrar", command=self.register)
         self.register_button.grid(row=3, column=0, columnspan=2, pady=10)
         
     def create_user(username, password):
