@@ -5,13 +5,13 @@ from ventanas.cargar_estadías import cargar_estadías
 from ventanas.cargar_referencias import cargar_referencias
 from ventanas.visualizar_ingresos import visualizar_ingresos
 
-class main(ctk.CTk):
+class MainApp(tk.Tk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.title("Ventanas")
 
-        #! Crear el botón del Primer Formulario:
+        # Crear el botón del Primer Formulario:
         self.mostrar_primer_formulario = tk.Button(
             self, text="Cargar Referencias", command=self.primer_formulario
         )
@@ -19,7 +19,7 @@ class main(ctk.CTk):
             row=0, column=0, columnspan=3, padx=10, pady=10
         )
 
-        #! Crear el botón del Segundo Formulario:
+        # Crear el botón del Segundo Formulario:
         self.mostrar_segundo_formulario = tk.Button(
             self, text="Cargar Estadias", command=self.segundo_formulario
         )
@@ -27,7 +27,7 @@ class main(ctk.CTk):
             row=1, column=0, columnspan=3, padx=10, pady=10
         )
 
-        #! Crear el botón del Tercer Formulario:
+        # Crear el botón del Tercer Formulario:
         self.mostrar_tercer_formulario = tk.Button(
             self, text="Visualizar Ingresos", command=self.tercer_formulario
         )
@@ -52,8 +52,6 @@ class main(ctk.CTk):
         ventana_ingresos = visualizar_ingresos(self) 
         self.config_ventana(ventana_ingresos)
 
-
-
 if __name__ == "__main__":
-    app = main()
+    app = MainApp()
     app.mainloop()

@@ -3,8 +3,12 @@ import customtkinter as ctk
 from tkinter import messagebox
 import bcrypt
 import os
-from main import main
+from dotenv import load_dotenv
+from main import MainApp
 from db.db_conection import start_connection, User
+
+# Cargar variables de entorno desde el archivo .env
+load_dotenv()
 
 class App(ctk.CTk):
     def __init__(self, *args, **kwargs):
@@ -31,7 +35,7 @@ class App(ctk.CTk):
 
         self.register_button = tk.Button(self, text="Registrar", command=self.register)
         self.register_button.grid(row=3, column=0, columnspan=2, pady=10)
-        
+
     def create_user(self, username, password):
         try:
             salt = bcrypt.gensalt()
@@ -65,6 +69,7 @@ class App(ctk.CTk):
 
         if self.verify_login(username, password):
             messagebox.showinfo("Login", "¡Inicio de sesión exitoso!")
+            self.destroy()  # Cerrar la ventana de inicio de sesión
             self.cargar_main()
         else:
             messagebox.showerror("Error", "Nombre de usuario o contraseña incorrectos")
@@ -85,8 +90,11 @@ class App(ctk.CTk):
         self.wait_window(subventana)
 
     def cargar_main(self):
-        main_window = main(self)
+        main_window = MainApp()  
+        main_window.transient(self)   #! Establecer main_window como transitoria a la ventana raíz y Hacer que main_window sea transitoria respecto a la ventana principal
         self.config_ventana(main_window)
+
+
 
 if __name__ == "__main__":
     app = App()
