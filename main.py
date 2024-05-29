@@ -5,8 +5,7 @@ from ventanas.cargar_estadías import cargar_estadías
 from ventanas.cargar_referencias import cargar_referencias
 from ventanas.visualizar_ingresos import visualizar_ingresos
 
-
-class App(ctk.CTk):
+class main(ctk.CTk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -36,7 +35,6 @@ class App(ctk.CTk):
             row=2, column=0, columnspan=3, padx=10, pady=10
         )
 
-
     def config_ventana(self, subventana):
         subventana.transient(self)
         subventana.grab_set()
@@ -57,5 +55,5 @@ class App(ctk.CTk):
 
 
 if __name__ == "__main__":
-    app = App()
+    app = main()
     app.mainloop()

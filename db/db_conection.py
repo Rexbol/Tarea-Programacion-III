@@ -1,6 +1,6 @@
-from sqlalchemy import create_engine, Column, String, Integer, func
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm import declarative_base
+from sqlalchemy import create_engine, Column, String, String, Integer, func
+
+from sqlalchemy.orm import sessionmaker, declarative_base
 
 Base = declarative_base()
 
@@ -22,6 +22,13 @@ class Habitacion(Base):
     id_habitacion = Column(Integer, primary_key=True)
     tipo = Column(String(20))
     costo = Column(Integer)
+
+class User(Base):
+    __tablename__ = 'users'
+    id = Column(Integer, primary_key=True)
+    username = Column(String(50), unique=True, nullable=False)
+    password = Column(String(128), nullable=False)
+    salt = Column(String(64), nullable=False)
 
 def start_connection():
     engine = create_engine(

@@ -1,30 +1,21 @@
 import tkinter as tk
 import customtkinter as ctk
 from tkinter import messagebox
-from sqlalchemy import create_engine, Column, Integer, String
-from sqlalchemy.orm import sessionmaker, declarative_base
 import bcrypt
 import os
-
 from main import main
-
-engine = create_engine('mysql+pymysql://root@localhost/ejemplo')
-Base = declarative_base()
-Session = sessionmaker(bind=engine)
-session = Session()
-
-class User(Base):
-    __tablename__ = 'users'
-    id = Column(Integer, primary_key=True)
-    username = Column(String(50), unique=True, nullable=False)
-    password = Column(String(128), nullable=False)
-    salt = Column(String(64), nullable=False)
-    
-Base.metadata.create_all(engine)
+from db.db_conection import start_connection, User
 
 class App(ctk.CTk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Inicializar conexión a la base de datos
+        self.session = start_connection()
+
+        # Diseño de la GUI
+        self.title("Sistema de Inicio de Sesión")
+        self.geometry("300x200")
 
         tk.Label(self, text="Usuario").grid(row=0, column=0, padx=10, pady=10)
         tk.Label(self, text="Contraseña").grid(row=1, column=0, padx=10, pady=10)
@@ -41,28 +32,39 @@ class App(ctk.CTk):
         self.register_button = tk.Button(self, text="Registrar", command=self.register)
         self.register_button.grid(row=3, column=0, columnspan=2, pady=10)
         
-    def create_user(username, password):
-        salt = bcrypt.gensalt()
-        pepper = os.environ.get("PEPPER", "default_pepper")
-        hashed_password = bcrypt.hashpw(password.encode() + pepper.encode(), salt)
-        new_user = User(username=username, password=hashed_password.decode(), salt=salt.decode())
-        session.add(new_user)
-        session.commit()
+    def create_user(self, username, password):
+        try:
+            salt = bcrypt.gensalt()
+            pepper = os.environ.get("PEPPER")
+            if not pepper:
+                raise ValueError("La variable de entorno PEPPER no está configurada")
+            hashed_password = bcrypt.hashpw(password.encode() + pepper.encode(), salt)
+            new_user = User(username=username, password=hashed_password.decode(), salt=salt.decode())
+            self.session.add(new_user)
+            self.session.commit()
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al crear el usuario: {e}")
 
-    def verify_login(username, password):
-        user = session.query(User).filter_by(username=username).first()
-        if user:
-            pepper = os.environ.get("PEPPER", "default_pepper")
-            if bcrypt.checkpw(password.encode() + pepper.encode(), user.password.encode()):
-                return True
-        return False
+    def verify_login(self, username, password):
+        try:
+            user = self.session.query(User).filter_by(username=username).first()
+            if user:
+                pepper = os.environ.get("PEPPER")
+                if not pepper:
+                    raise ValueError("La variable de entorno PEPPER no está configurada")
+                if bcrypt.checkpw(password.encode() + pepper.encode(), user.password.encode()):
+                    return True
+            return False
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al verificar el inicio de sesión: {e}")
+            return False
 
     def login(self):
         username = self.username_entry.get()
         password = self.password_entry.get()
 
         if self.verify_login(username, password):
-            messagebox.showinfo("Login", "Login exitoso!")
+            messagebox.showinfo("Login", "¡Inicio de sesión exitoso!")
             self.cargar_main()
         else:
             messagebox.showerror("Error", "Nombre de usuario o contraseña incorrectos")
@@ -73,20 +75,19 @@ class App(ctk.CTk):
 
         if username and password:
             self.create_user(username, password)
-            messagebox.showinfo("Registro", "Usuario creado exitosamente!")
+            messagebox.showinfo("Registro", "¡Usuario creado exitosamente!")
         else:
             messagebox.showerror("Error", "Por favor, complete ambos campos")
-            
+
     def config_ventana(self, subventana):
         subventana.transient(self)
         subventana.grab_set()
         self.wait_window(subventana)
-        
-    def cargar_main(self):
-        cargar_main = main(self) 
-        self.config_ventana(cargar_main)
-    
 
-if __name__ == "__login__":
+    def cargar_main(self):
+        main_window = main(self)
+        self.config_ventana(main_window)
+
+if __name__ == "__main__":
     app = App()
     app.mainloop()
