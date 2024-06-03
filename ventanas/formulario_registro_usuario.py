@@ -8,7 +8,7 @@ from db.db_conection import start_connection, User
 # Cargar variables de entorno desde el archivo .env
 load_dotenv()
 
-class registrar_user(tk.Toplevel):
+class formulario_registro_usuario(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
 
@@ -69,7 +69,7 @@ class registrar_user(tk.Toplevel):
             messagebox.showerror("Error", "Por favor, complete todos los campos")
             return
 
-        if  password == confirm_password:
+        if  password != confirm_password:
             messagebox.showerror("Error", "La contraseña no coincide con la confirmacion")
             return
 

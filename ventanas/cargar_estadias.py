@@ -1,10 +1,10 @@
 import tkinter as tk
 from tkinter import ttk
-import tkinter.messagebox as tk_messagebox
-from ventanas.modificar_dias_estadia import modificar_dias
+import tkinter.messagebox as messagebox
 from db.db_conection import start_connection, Estadia, Habitacion
+from ventanas.modificar_dias_estadia import ModificarDiasEstadia
 
-class cargar_estadías(tk.Toplevel):
+class CargarEstadias(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
 
@@ -20,16 +20,13 @@ class cargar_estadías(tk.Toplevel):
         self.frame_derecho = tk.Frame(self, bd=2, relief="solid")
         self.frame_derecho.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
 
-        #! Configurar el grid para que los frames ocupen el espacio disponible
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_columnconfigure(1, weight=1)
-        self.grid_rowconfigure(0, weight=1)
-
+        #! Cargar Frames
         self.crear_frame_izquierdo()
         self.crear_frame_derecho()
 
+        #!Carga de datos en tablas
         self.cargar_referencias()
-        self.cargar_Estadias_En_curso()
+        self.cargar_estadias_en_curso()
 
     def crear_frame_izquierdo(self):
         #! Etiquetas:
@@ -44,7 +41,6 @@ class cargar_estadías(tk.Toplevel):
         self.tabla_de_referencias = ttk.Treeview(
             self.frame_izquierdo, columns=("tipo", "costo",), show="headings"
         )
-
         #! Poner titulo a las columnas
         self.tabla_de_referencias.heading("tipo", text="Tipo")
         self.tabla_de_referencias.heading("costo", text="Costo")
@@ -74,12 +70,12 @@ class cargar_estadías(tk.Toplevel):
         self.boton_cargar.grid(row=4, column=0, padx=5, pady=5)
 
         #! Crear el botón de modificar:
-        self.boton_modificar = tk.Button(self.frame_izquierdo, text="Modificar", command=self.modificar_dias_estadia)
+        self.boton_modificar = tk.Button(self.frame_izquierdo, text="Modificar", command=self.abrir_ventana_edicion_dias)
         self.boton_modificar.grid(row=4, column=1, padx=5, pady=5)
 
         #! Crear el botón de Terminar:
-        self.boton_termiar = tk.Button(self.frame_izquierdo, text="Terminar", command=self.terminar_estadia)
-        self.boton_termiar.grid(row=4, column=2, padx=5, pady=5)
+        self.boton_terminar = tk.Button(self.frame_izquierdo, text="Terminar", command=self.terminar_estadia)
+        self.boton_terminar.grid(row=4, column=2, padx=5, pady=5)
 
     def crear_frame_derecho(self):
         #! Configurar el grid para que la tabla ocupe todo el espacio:
@@ -120,24 +116,13 @@ class cargar_estadías(tk.Toplevel):
         editar_estado = self.session.query(Estadia).filter_by(id_estadia=id_estadia).first()
         editar_estado.state = 'finalizado'
         self.session.commit()
-        self.cargar_Estadias_En_curso()
+        self.cargar_estadias_en_curso()
 
     def terminar_estadia(self):
         estadia_a_terminar = self.recuperar_estadia_seleccionada()
         self.finalizar_estadia(estadia_a_terminar[0])
 
-    def modificar_dias_estadia(self):
-        estadia_a_modificar = self.recuperar_estadia_seleccionada()
-        id_estadia = estadia_a_modificar[0]
-
-        ventana_referencia = modificar_dias(self, id_estadia)
-        ventana_referencia.transient(self)
-        ventana_referencia.grab_set()
-        self.wait_window(ventana_referencia)
-
     def cargar_referencias(self):
-
-
         #! Obtener referencias de la base de datos
         referencias = self.session.query(Habitacion).all()
 
@@ -152,7 +137,7 @@ class cargar_estadías(tk.Toplevel):
         else:
             print("No existe estadias en curso para esta habitacion")
 
-    def cargar_Estadias_En_curso(self):
+    def cargar_estadias_en_curso(self):
         estadias_en_curso = self.session.query(Estadia).filter(Estadia.state == "En_curso").all()
         self.lista_estadias.delete(*self.lista_estadias.get_children())
 
@@ -162,39 +147,48 @@ class cargar_estadías(tk.Toplevel):
 
         for estadia in estadias_en_curso:
             self.lista_estadias.insert("", "end", values=(
-                estadia.id_estadia,
-                estadia.numero_habitacion,
-                estadia.tipo_habitacion,
-                estadia.costo,
-                estadia.dias_estadia,
-                estadia.sub_total,
-                estadia.descuento,
-                estadia.total 
-            ))
+            estadia.id_estadia,
+            estadia.numero_habitacion,
+            estadia.tipo_habitacion,
+            estadia.costo,
+            estadia.dias_estadia,
+            estadia.sub_total,
+            estadia.descuento,
+            estadia.total 
+    )
+)
+
+    def modify_days(self, value):
+        estadia_a_modificar = self.recuperar_estadia_seleccionada()
+        id_estadia = estadia_a_modificar[0]
+
+        #! Actualizar la estadia en la base de datos
+        editar_dias = self.session.query(Estadia).filter_by(id_estadia=id_estadia).first()
+        editar_dias.dias_estadia = value
+        self.session.commit()
+        
+        self.cargar_estadias_en_curso()
+
+    def abrir_ventana_edicion_dias(self):
+        estadia_a_modificar = self.recuperar_estadia_seleccionada()
+        dias_estadia = estadia_a_modificar[4]
+
+        ventana_referencia = ModificarDiasEstadia(self, dias_estadia)
+        ventana_referencia.transient(self)
+        ventana_referencia.grab_set()
+        self.wait_window(ventana_referencia)
+
+    def descuento(self, dias_estadia, forma_de_pago):
+        descuento = 0
+        if forma_de_pago == "contado":
+            descuento = 10
+        elif forma_de_pago == "credito" and dias_estadia > 5:
+            descuento = 5
+        if dias_estadia > 10:
+            descuento += 2
+        return descuento
 
     def cargar_estadia(self):
-        try:
-            numero_habitacion = self.nro_habitacion.get()
-            dias_estadia = int(self.dias_estadia.get())
-            referencia_seleccionada = self.tabla_de_referencias.item(self.tabla_de_referencias.selection())["values"]
-            tipo_habitacion = referencia_seleccionada[0]
-            costo_habitacion = referencia_seleccionada[1]
-
-            sub_total = costo_habitacion * dias_estadia
-            descuento = 10 if self.forma_de_pago.get() == "contado" else 0
-            total = sub_total - (sub_total * descuento / 100)
-
-            self.buscar_estadia_repetida(numero_habitacion)
-
-            nueva_estadia = Estadia(numero_habitacion=numero_habitacion, tipo_habitacion=tipo_habitacion, costo=costo_habitacion, dias_estadia=dias_estadia, sub_total=sub_total, descuento=descuento, total=total, state="En_curso")
-            self.session.add(nueva_estadia)
-            self.session.commit()
-
-            self.cargar_Estadias_En_curso()
-        except Exception as e:
-            tk_messagebox.showerror("Error", f"Error al cargar la estadia: {str(e)}")
-
-
         #! Recuperacion de datos del formulario:
         numero_habitacion = self.nro_habitacion.get()
         seleccion = self.tabla_de_referencias.focus()
@@ -206,32 +200,29 @@ class cargar_estadías(tk.Toplevel):
 
         #! Validacion de datos:
         if not numero_habitacion:
-            tk_messagebox.showerror("Error", "Ingrese un valor valido para Numero de la Habitacion")
+            messagebox.showerror("Error", "Ingrese un valor valido para Numero de la Habitacion")
             return
 
         if not seleccion:
-            tk_messagebox.showerror("Error", "Seleccione un Tipo de Habitacion")
+            messagebox.showerror("Error", "Seleccione un Tipo de Habitacion")
             return
 
         if not dias_estadia:
-            tk_messagebox.showerror("Error", "Ingrese un valor valido para las dias de Estadia")
+            messagebox.showerror("Error", "Ingrese un valor valido para las dias de Estadia")
             return
 
         if not forma_de_pago:
-            tk_messagebox.showerror("Error", "Seleccione la Forma de Pago")
+            messagebox.showerror("Error", "Seleccione la Forma de Pago")
             return
 
         #! Conversion archivo seleccionado en una tupla:
         valores_fila = self.tabla_de_referencias.item(seleccion, "values")
-
         #! Hallar el descuento:
         descuento = self.descuento(dias_estadia=int(dias_estadia), forma_de_pago=forma_de_pago)
-
         #! Hallar el sub_total y el total:
         sub_total = int(valores_fila[1]) * int(dias_estadia)
         total = int(sub_total * (1 - (descuento / 100)))
 
-        #! Instanciacion de Objeto estadia:
         nueva_estadia = Estadia(
             numero_habitacion = numero_habitacion,
             tipo_habitacion =   valores_fila[0],
@@ -258,3 +249,7 @@ class cargar_estadías(tk.Toplevel):
             descuento,
             total
         ))
+
+if __name__ == "__main__":
+    app = CargarEstadias(None)
+    app.mainloop()

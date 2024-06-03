@@ -1,82 +1,67 @@
 import tkinter as tk
 
-from ventanas.cargar_estadías import cargar_estadías
-from ventanas.cargar_referencias import cargar_referencias
+from ventanas.cargar_referencias import CargarReferencias
+from ventanas.cargar_estadias import CargarEstadias
 from ventanas.visualizar_ingresos import visualizar_ingresos
-from ventanas.formulario_regiestro_user import registrar_user
+from ventanas.formulario_registro_usuario import formulario_registro_usuario
 
-class MainApp(tk.Tk):
+
+import tkinter as tk
+
+class MainApplication(tk.Tk):
     def __init__(self, user_role, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.user_role = user_role
 
         self.title("Sistema de Gestión")
-        self.geometry_config()
+        self.configure_geometry()
 
-        # Configurar las columnas para que se expandan
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
         self.grid_columnconfigure(2, weight=1)
 
-        # Crear botones para abrir diferentes formularios
-        self.boton_cargar_referencias = tk.Button(
-            self, text="Cargar Referencias", command=self.abrir_formulario_referencias
-        )
-        self.boton_cargar_referencias.grid(
-            row=0, column=0, columnspan=3, sticky="ew", padx=10, pady=10
-        )
+        self.create_buttons()
 
-        self.boton_cargar_estadias = tk.Button(
-            self, text="Cargar Estadías", command=self.abrir_formulario_estadias
-        )
-        self.boton_cargar_estadias.grid(
-            row=1, column=0, columnspan=3, sticky="ew", padx=10, pady=10
-        )
-
-        self.boton_visualizar_ingresos = tk.Button(
-            self, text="Visualizar Ingresos", command=self.abrir_formulario_ingresos
-        )
-        self.boton_visualizar_ingresos.grid(
-            row=2, column=0, columnspan=3, sticky="ew", padx=10, pady=10
-        )
-
-        #! Mostrar el botón "Registrar Usuarios" solo si el rol del usuario es "admin"
-        if self.user_role == "admin":
-            self.boton_registrar_usuario = tk.Button(
-                self, text="Registrar Usuarios", command=self.abrir_formulario_registro
-            )
-            self.boton_registrar_usuario.grid(
-                row=3, column=0, columnspan=3, sticky="ew", padx=10, pady=10
-            )
-
-    def configurar_ventana(self, ventana):
-        ventana.transient(self)
-        ventana.grab_set()
-        self.wait_window(ventana)
-
-    def geometry_config(self):
+    def configure_geometry(self):
         if self.user_role == "admin":
             self.geometry("250x190")
-            return
-        self.geometry("250x140")
+        else:
+            self.geometry("250x140")
 
-    def abrir_formulario_referencias(self):
-        ventana_referencias = cargar_referencias(self)
-        self.configurar_ventana(ventana_referencias)
+    def create_buttons(self):
+        button_texts = ["Cargar Referencias", "Cargar Estadías", "Visualizar Ingresos"]
+        commands = [self.open_reference_form, self.open_stay_form, self.open_income_form]
+        
+        if self.user_role == "admin":
+            button_texts.append("Registrar Usuario")
+            commands.append(self.open_registration_form)
 
-    def abrir_formulario_estadias(self):
-        ventana_estadias = cargar_estadías(self)
-        self.configurar_ventana(ventana_estadias)
+        for i, (text, command) in enumerate(zip(button_texts, commands)):
+            button = tk.Button(self, text=text, command=command)
+            button.grid(row=i, column=0, columnspan=3, sticky="ew", padx=10, pady=10)
 
-    def abrir_formulario_ingresos(self):
-        ventana_ingresos = visualizar_ingresos(self)
-        self.configurar_ventana(ventana_ingresos)
+    def open_window(self, window):
+        window.transient(self)
+        window.grab_set()
+        self.wait_window(window)
 
-    def abrir_formulario_registro(self):
-        ventana_registro = registrar_user(self)
-        self.configurar_ventana(ventana_registro)
+    def open_reference_form(self):
+        reference_window = CargarReferencias(self)
+        self.open_window(reference_window)
+
+    def open_stay_form(self):
+        stay_window = CargarEstadias(self)
+        self.open_window(stay_window)
+
+    def open_income_form(self):
+        income_window = visualizar_ingresos(self)
+        self.open_window(income_window)
+
+    def open_registration_form(self):
+        registration_window = formulario_registro_usuario(self)
+        self.open_window(registration_window)
 
 if __name__ == "__main__":
-    app = MainApp(user_role="default")  # Este valor solo es un ejemplo
+    app = MainApplication(user_role="default")
     app.mainloop()
