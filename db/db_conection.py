@@ -29,6 +29,7 @@ class User(Base):
     username = Column(String(50), unique=True, nullable=False)
     password = Column(String(128), nullable=False)
     salt = Column(String(64), nullable=False)
+    role = Column(String(5), nullable=False)
 
 def start_connection():
     engine = create_engine(
