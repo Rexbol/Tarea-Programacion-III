@@ -52,8 +52,7 @@ class formulario_registro_usuario(tk.Toplevel):
             new_user = User(
                 username=username, 
                 password=hashed_password.decode(), 
-                salt=salt.decode(),
-                role="user"
+                salt=salt.decode()
             )
             self.session.add(new_user)
             self.session.commit()

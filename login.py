@@ -5,7 +5,9 @@ import bcrypt
 import os
 from dotenv import load_dotenv
 from main import MainApplication
-from db.db_conection import start_connection, User
+from db.db_conection import start_connection, restart_session, close_session, User
+
+from ventanas.modificar_contraseña import ModificarContraseña
 
 #! Cargar variables de entorno desde el archivo .env
 load_dotenv()
@@ -39,16 +41,29 @@ class LoginApp(ctk.CTk):
 
     def verify_login(self, username, password):
         try:
+            self.db_session = restart_session(self.db_session)
             user = self.db_session.query(User).filter_by(username=username).first()
-            if user:
-                pepper = os.environ.get("PEPPER")
-                if not pepper:
-                    raise ValueError("La variable de entorno PEPPER no está configurada")
-                if bcrypt.checkpw(password.encode() + pepper.encode(), user.password.encode()):
-                    return user.role
-            return False
+            if not user:
+                messagebox.showerror("Error", "Nombre de usuario o contraseña incorrectos")
+                return False
+            
+            if user.is_first_time:
+                messagebox.showinfo("Reseteo de Contraseña","Como ingresa por primera vez deve cambiar su contraseña por seguridad")
+                self.load_modify_password_window(user.id)
+                return False
+
+            pepper = os.environ.get("PEPPER")
+            if not pepper:
+                raise ValueError("La variable de entorno PEPPER no está configurada")
+            
+            if bcrypt.checkpw(password.encode() + pepper.encode(), user.password.encode()):
+                return user.role
+            else: 
+                messagebox.showerror("Error", "Nombre de usuario o contraseña incorrectos")
+                return False
         except Exception as e:
             messagebox.showerror("Error", f"Error al verificar el inicio de sesión: {e}")
+            messagebox.showerror("Error", "Nombre de usuario o contraseña incorrectos")
             return False
 
     def attempt_login(self):
@@ -57,10 +72,17 @@ class LoginApp(ctk.CTk):
         user_role = self.verify_login(username, password)
         if user_role:
             messagebox.showinfo("Login", "¡Inicio de sesión exitoso!")
+            close_session(self.db_session) #! Cerrar secion a la base de datos.
             self.destroy()
             self.load_main_window(user_role)
-        else:
-            messagebox.showerror("Error", "Nombre de usuario o contraseña incorrectos")
+
+            
+
+    def load_modify_password_window(self, id_usuario):
+        ventana_referencia = ModificarContraseña(self, id_usuario, "user")
+        ventana_referencia.transient(self)
+        ventana_referencia.grab_set()
+        self.wait_window(ventana_referencia)
 
     def load_main_window(self, user_role):
         main_window = MainApplication(user_role=user_role)

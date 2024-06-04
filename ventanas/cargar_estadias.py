@@ -158,13 +158,36 @@ class CargarEstadias(tk.Toplevel):
     )
 )
 
-    def modify_days(self, value):
-        estadia_a_modificar = self.recuperar_estadia_seleccionada()
-        id_estadia = estadia_a_modificar[0]
+    def descuento(self, dias_estadia, forma_de_pago):
+        descuento = 0
+        if forma_de_pago == "contado":
+            descuento = 10
+        elif forma_de_pago == "credito" and dias_estadia > 5:
+            descuento = 5
+        if dias_estadia > 10:
+            descuento += 2
+        return descuento
+
+    def modify_days(self, dias_estadia):
+        estadia_seleccionada = self.recuperar_estadia_seleccionada()
+        id_estadia = estadia_seleccionada[0]
+        
+        #! Octener archivo a editar:
+        archivo_estadia = self.session.query(Estadia).filter_by(id_estadia=id_estadia).first()
+
+        #! Hallar el descuento:
+        descuento = self.descuento(dias_estadia = int(dias_estadia), forma_de_pago = archivo_estadia.forma_de_pago)
+
+        #! Hallar el sub_total y el total:
+        sub_total = int(archivo_estadia.costo) * int(dias_estadia)
+        total = int(sub_total * (1 - (descuento / 100)))
 
         #! Actualizar la estadia en la base de datos
-        editar_dias = self.session.query(Estadia).filter_by(id_estadia=id_estadia).first()
-        editar_dias.dias_estadia = value
+        archivo_estadia.dias_estadia = dias_estadia
+        archivo_estadia.sub_total = sub_total
+        archivo_estadia.descuento = descuento
+        archivo_estadia.total = total
+
         self.session.commit()
         
         self.cargar_estadias_en_curso()
@@ -177,16 +200,6 @@ class CargarEstadias(tk.Toplevel):
         ventana_referencia.transient(self)
         ventana_referencia.grab_set()
         self.wait_window(ventana_referencia)
-
-    def descuento(self, dias_estadia, forma_de_pago):
-        descuento = 0
-        if forma_de_pago == "contado":
-            descuento = 10
-        elif forma_de_pago == "credito" and dias_estadia > 5:
-            descuento = 5
-        if dias_estadia > 10:
-            descuento += 2
-        return descuento
 
     def cargar_estadia(self):
         #! Recuperacion de datos del formulario:

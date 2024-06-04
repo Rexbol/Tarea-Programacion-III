@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, String, String, Integer, func
+from sqlalchemy import create_engine, Column, String, String, Boolean, Integer, func
 
 from sqlalchemy.orm import sessionmaker, declarative_base
 
@@ -29,7 +29,8 @@ class User(Base):
     username = Column(String(50), unique=True, nullable=False)
     password = Column(String(128), nullable=False)
     salt = Column(String(64), nullable=False)
-    role = Column(String(5), nullable=False)
+    role = Column(String(5), nullable=False, default="user")
+    is_first_time =  Column(Boolean, nullable=False, default=True)
 
 def start_connection():
     engine = create_engine(
@@ -38,6 +39,14 @@ def start_connection():
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     return Session()
+
+def restart_session(current_session):
+    current_session.close()
+    new_session = start_connection()
+    return new_session
+
+def close_session(session):
+    session.close()
 
 #! Octener la suma de ingresos totales por tipo de abitacion:
 def get_total_finalizado(tipo_habitacion):
