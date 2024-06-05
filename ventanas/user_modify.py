@@ -3,7 +3,7 @@ from tkinter import ttk
 from tkinter import messagebox
 from db.db_conection import start_connection, User
 
-from modificar_contraseña import ModificarContraseña
+from ventanas.modificar_contraseña import ModificarContraseña
 
 class UserModify(tk.Toplevel):
     def __init__(self, parent):
