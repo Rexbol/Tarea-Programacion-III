@@ -76,8 +76,6 @@ class LoginApp(ctk.CTk):
             self.destroy()
             self.load_main_window(user_role)
 
-            
-
     def load_modify_password_window(self, id_usuario):
         ventana_referencia = ModificarContraseña(self, id_usuario, "user")
         ventana_referencia.transient(self)

@@ -4,9 +4,7 @@ from ventanas.cargar_referencias import CargarReferencias
 from ventanas.cargar_estadias import CargarEstadias
 from ventanas.visualizar_ingresos import visualizar_ingresos
 from ventanas.formulario_registro_usuario import formulario_registro_usuario
-
-
-import tkinter as tk
+from ventanas.user_modify import UserModify
 
 class MainApplication(tk.Tk):
     def __init__(self, user_role, *args, **kwargs):
@@ -25,7 +23,7 @@ class MainApplication(tk.Tk):
 
     def configure_geometry(self):
         if self.user_role == "admin":
-            self.geometry("250x190")
+            self.geometry("300x230")
         else:
             self.geometry("250x140")
 
@@ -34,8 +32,8 @@ class MainApplication(tk.Tk):
         commands = [self.open_reference_form, self.open_stay_form, self.open_income_form]
         
         if self.user_role == "admin":
-            button_texts.append("Registrar Usuario")
-            commands.append(self.open_registration_form)
+            button_texts.extend(["Registrar Usuario", "Modificar Usuarios"])
+            commands.extend([self.open_registration_form, self.open_user_modify])
 
         for i, (text, command) in enumerate(zip(button_texts, commands)):
             button = tk.Button(self, text=text, command=command)
@@ -61,6 +59,10 @@ class MainApplication(tk.Tk):
     def open_registration_form(self):
         registration_window = formulario_registro_usuario(self)
         self.open_window(registration_window)
+
+    def open_user_modify(self):
+        user_modify_window = UserModify(self)
+        self.open_window(user_modify_window)
 
 if __name__ == "__main__":
     app = MainApplication(user_role="default")
