@@ -51,12 +51,26 @@ def close_session(session):
 #! Octener la suma de ingresos totales por tipo de abitacion:
 def get_total_finalizado(tipo_habitacion):
     session = start_connection()
-    total, dias_estadia = session.query(
-        func.sum(Estadia.total),
-        func.sum(Estadia.dias_estadia)
-    ).filter(
-        Estadia.state == 'finalizado',
-        Estadia.tipo_habitacion == tipo_habitacion
-    ).first()
+
+    total, dias_estadia = session.query( 
+            func.sum(Estadia.total), 
+            func.sum(Estadia.dias_estadia)
+        ).filter( Estadia.state == 'finalizado', Estadia.tipo_habitacion == tipo_habitacion).first()
+
     session.close()
     return (dias_estadia if dias_estadia else 0, total if total else 0)
+
+def get_tipo_abitacion():
+    session = start_connection()
+    #! Recuperar tipos de abitacion y almacenarlo como lista de tuplas. 
+    resultado = session.query(Habitacion.tipo).all()
+
+    tipos_habitacion = []
+
+    for tipo in resultado:
+        tipos_habitacion.append(tipo[0]) 
+        #* Agregar el primer elemento de cada tupla (el valor de 'tipo') a la lista. otra forma de aplicar el for [tipo[0] for tipo in resultado]
+
+    session.close()
+    
+    return tipos_habitacion

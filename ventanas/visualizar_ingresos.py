@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 import customtkinter as ctk
-from db.db_conection import get_total_finalizado, start_connection
+from db.db_conection import get_total_finalizado, start_connection, get_tipo_abitacion
 class visualizar_ingresos(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
@@ -22,8 +22,13 @@ class visualizar_ingresos(tk.Toplevel):
         self.crear_frame_derecho()
         
     def crear_frame_izquierdo(self):
+        #! Traer datos de tipo de abitacion disponible:
+        tipos_de_abitaciones = get_tipo_abitacion()
+        
+
+        
         #! Crear lista desplegable y asignar la opcion inicial
-        self.lista_dias = ttk.Combobox(self.frame_izquierdo, values=["Habitaciones","Simple", "Doble", "Triple", "Cuadruple"])
+        self.lista_dias = ttk.Combobox(self.frame_izquierdo, values = tipos_de_abitaciones)
         self.lista_dias.grid(row=0, column=0, padx=5, pady=5)
         self.lista_dias.current(0)
 
@@ -60,5 +65,10 @@ class visualizar_ingresos(tk.Toplevel):
         tipo_habitacion = self.lista_dias.get()
         self.tabla_ingresos.delete(*self.tabla_ingresos.get_children())
         total = get_total_finalizado(tipo_habitacion)
-        print(total)
         self.tabla_ingresos.insert("", "end", values=(tipo_habitacion, total[0], total[1]))
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    root.withdraw()  #! Oculta la ventana principal
+    app = visualizar_ingresos(root)
+    app.mainloop()

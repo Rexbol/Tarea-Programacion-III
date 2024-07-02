@@ -9,7 +9,7 @@ class CargarEstadias(tk.Toplevel):
         super().__init__(parent)
 
         #! Establecer la conexión a la base de datos:
-        self.session = start_connection() 
+        self.session = start_connection() #*
 
         self.title("Sistema de Hotel")
 
